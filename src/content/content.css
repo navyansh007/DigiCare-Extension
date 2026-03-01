@@ -1,0 +1,125 @@
+/* Content script styles - isolated from host page */
+
+#digicare-sidebar-root {
+  all: initial;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1e293b;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#digicare-sidebar-root *,
+#digicare-sidebar-root *::before,
+#digicare-sidebar-root *::after {
+  box-sizing: border-box;
+}
+
+/* Toggle button styles */
+.digicare-toggle-btn {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2147483646;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px 0 0 12px;
+  background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: -2px 2px 12px rgba(13, 148, 136, 0.3);
+  transition: all 0.3s ease;
+}
+
+.digicare-toggle-btn:hover {
+  width: 56px;
+  background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+  box-shadow: -4px 4px 20px rgba(13, 148, 136, 0.4);
+}
+
+.digicare-toggle-btn svg {
+  width: 24px;
+  height: 24px;
+  color: white;
+  transition: transform 0.3s ease;
+}
+
+.digicare-toggle-btn:hover svg {
+  transform: scale(1.1);
+}
+
+.digicare-toggle-btn.sidebar-open {
+  right: 420px;
+}
+
+/* Sidebar container */
+.digicare-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  z-index: 2147483647;
+  background: #f8fafc;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.digicare-sidebar.open {
+  transform: translateX(0);
+}
+
+/* Animations */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-slide-in {
+  animation: slideInRight 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}

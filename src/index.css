@@ -1,0 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --digicare-primary: #0d9488;
+  --digicare-primary-light: #14b8a6;
+  --digicare-primary-dark: #0f766e;
+  --digicare-bg: #f8fafc;
+  --digicare-card: #ffffff;
+  --digicare-border: #e2e8f0;
+  --digicare-text: #1e293b;
+  --digicare-text-muted: #64748b;
+}
+
+@layer components {
+  .digicare-btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2;
+  }
+
+  .digicare-btn-primary {
+    @apply digicare-btn bg-medical-600 text-white hover:bg-medical-700 active:bg-medical-800;
+  }
+
+  .digicare-btn-secondary {
+    @apply digicare-btn bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300;
+  }
+
+  .digicare-btn-ghost {
+    @apply digicare-btn bg-transparent text-gray-600 hover:bg-gray-100 active:bg-gray-200;
+  }
+
+  .digicare-card {
+    @apply bg-white rounded-xl shadow-card border border-gray-100 p-4 transition-shadow duration-200 hover:shadow-card-hover;
+  }
+
+  .digicare-input {
+    @apply w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-medical-500 focus:ring-2 focus:ring-medical-200 outline-none transition-all duration-200;
+  }
+
+  .digicare-label {
+    @apply text-sm font-medium text-gray-700 mb-1 block;
+  }
+
+  .digicare-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .digicare-badge-success {
+    @apply digicare-badge bg-green-100 text-green-800;
+  }
+
+  .digicare-badge-warning {
+    @apply digicare-badge bg-amber-100 text-amber-800;
+  }
+
+  .digicare-badge-danger {
+    @apply digicare-badge bg-red-100 text-red-800;
+  }
+
+  .digicare-badge-info {
+    @apply digicare-badge bg-blue-100 text-blue-800;
+  }
+}
+
+/* Custom scrollbar */
+.digicare-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.digicare-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.digicare-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.digicare-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
