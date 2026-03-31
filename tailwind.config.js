@@ -72,5 +72,4 @@ export default {
     },
   },
   plugins: [],
-  important: '#digicare-sidebar-root',
 }

@@ -1,26 +1,49 @@
 import { StrictMode, useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Sidebar, ToggleButton } from '../components/sidebar';
-import '../index.css';
-import './content.css';
+
+// Import styles as raw strings so they can be injected into the Shadow DOM.
+// Without this, Vite injects them into the host page's <head>, causing Tailwind
+// Preflight resets to bleed into the host page and grey out its text.
+import indexCss from '../index.css?inline';
+import contentCss from './content.css?inline';
 
 const MOUNT_POINT_ID = 'digicare-sidebar-root';
 
 function ContentApp() {
     const [isOpen, setIsOpen] = useState(false);
-    const [autoLoadPatient, setAutoLoadPatient] = useState<any | null>(null);
+    // Only the patient UUID is stored here — full data is always fetched from the API
+    const [autoLoadPatientId, setAutoLoadPatientId] = useState<string | null>(null);
 
     useEffect(() => {
-        const handleMessage = (request: any, _sender: chrome.runtime.MessageSender, _sendResponse: (response?: any) => void) => {
+        const handleMessage = (
+            request: any,
+            _sender: chrome.runtime.MessageSender,
+            _sendResponse: (response?: any) => void
+        ) => {
             if (request.type === 'TOGGLE_SIDEBAR') {
                 setIsOpen((prev) => !prev);
             }
         };
 
+        /**
+         * The VDocs clinic portal can fire this event to open the sidebar for a
+         * specific patient.  We only use the patient's `id` (UUID) and always
+         * re-fetch from the API — the event payload is never used as patient data.
+         *
+         * Expected event detail: { patientId: string }
+         * Legacy shape also accepted: { patient: { id: string } }
+         */
         const handleOpenPatient = (event: CustomEvent) => {
-            if (event.detail && event.detail.patient) {
+            const detail = event.detail;
+            if (!detail) return;
+
+            const patientId: string | undefined =
+                detail.patientId || detail.patient?.id;
+
+            if (patientId) {
                 setIsOpen(true);
-                setAutoLoadPatient(event.detail.patient);
+                setAutoLoadPatientId(patientId);
             }
         };
 
@@ -41,21 +64,33 @@ function ContentApp() {
             <Sidebar
                 isOpen={isOpen}
                 onClose={() => setIsOpen(false)}
-                autoLoadPatient={autoLoadPatient}
-                onAutoLoadComplete={() => setAutoLoadPatient(null)}
+                autoLoadPatientId={autoLoadPatientId}
+                onAutoLoadComplete={() => setAutoLoadPatientId(null)}
             />
         </>
     );
 }
 
-// Function to mount the app
 function mount() {
-    // Check if already mounted
     if (document.getElementById(MOUNT_POINT_ID)) return;
 
+    // Shadow host — the only element added to the host page's DOM
+    const host = document.createElement('div');
+    host.id = MOUNT_POINT_ID;
+    document.body.appendChild(host);
+
+    // Shadow root provides full style isolation: Tailwind Preflight and all
+    // extension CSS stay inside this boundary and never reach the host page.
+    const shadow = host.attachShadow({ mode: 'open' });
+
+    // Inject extension styles into the shadow root (not the host page <head>)
+    const style = document.createElement('style');
+    style.textContent = indexCss + '\n' + contentCss;
+    shadow.appendChild(style);
+
+    // Mount point for the React app
     const mountPoint = document.createElement('div');
-    mountPoint.id = MOUNT_POINT_ID;
-    document.body.appendChild(mountPoint);
+    shadow.appendChild(mountPoint);
 
     const root = createRoot(mountPoint);
     root.render(
@@ -65,5 +100,4 @@ function mount() {
     );
 }
 
-// Mount the app
 mount();

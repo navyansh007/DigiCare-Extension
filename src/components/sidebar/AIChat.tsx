@@ -3,10 +3,12 @@ import { motion } from 'framer-motion';
 import { Send, Bot, User, Sparkles } from 'lucide-react';
 import { Button } from '../ui';
 import type { Patient } from '../../types/patient';
+import { askPatientQuestion } from '../../services/pipelineService';
 
 interface AIChatProps {
     patient: Patient;
     specialization: string;
+    patientId: string;
 }
 
 interface Message {
@@ -16,7 +18,7 @@ interface Message {
     isTyping?: boolean;
 }
 
-export function AIChat({ patient, specialization }: AIChatProps) {
+export function AIChat({ patient, specialization, patientId }: AIChatProps) {
     const [messages, setMessages] = useState<Message[]>([
         {
             id: '1',
@@ -56,7 +58,8 @@ export function AIChat({ patient, specialization }: AIChatProps) {
         }
 
         if (q.includes('vital') || q.includes('bp') || q.includes('blood pressure')) {
-            return `Latest Vitals (Jan 15): BP ${patient.vitals.bloodPressure.systolic}/${patient.vitals.bloodPressure.diastolic}, HR ${patient.vitals.heartRate}, SpO2 ${patient.vitals.oxygenSaturation}%.`;
+            if (!patient.vitals) return 'No vitals have been recorded for this patient.';
+            return `Latest vitals — BP ${patient.vitals.bloodPressure.systolic}/${patient.vitals.bloodPressure.diastolic} mmHg, HR ${patient.vitals.heartRate} bpm, SpO2 ${patient.vitals.oxygenSaturation}%.`;
         }
 
         if (q.includes('history') || q.includes('visit')) {
@@ -79,12 +82,23 @@ export function AIChat({ patient, specialization }: AIChatProps) {
         setInput('');
         setIsTyping(true);
 
-        // Simulate network delay
-        setTimeout(() => {
+        try {
+            // Try pipeline first; it has access to actual lab findings
+            const result = await askPatientQuestion(patientId, userMsg.text);
+            setMessages(prev => [
+                ...prev,
+                { id: (Date.now() + 1).toString(), sender: 'ai', text: result.answer }
+            ]);
+        } catch {
+            // Pipeline unreachable or no findings stored — fall back to local heuristics
             const responseText = generateResponse(userMsg.text);
-            setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), sender: 'ai', text: responseText }]);
+            setMessages(prev => [
+                ...prev,
+                { id: (Date.now() + 1).toString(), sender: 'ai', text: responseText }
+            ]);
+        } finally {
             setIsTyping(false);
-        }, 1000);
+        }
     };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {

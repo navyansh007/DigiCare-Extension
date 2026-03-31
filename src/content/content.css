@@ -1,7 +1,9 @@
-/* Content script styles - isolated from host page */
+/* Content script styles - scoped inside Shadow DOM */
 
-#digicare-sidebar-root {
+/* :host targets the shadow host element (<div id="digicare-sidebar-root">) */
+:host {
   all: initial;
+  display: contents;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 14px;
   line-height: 1.5;
@@ -10,9 +12,9 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-#digicare-sidebar-root *,
-#digicare-sidebar-root *::before,
-#digicare-sidebar-root *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 

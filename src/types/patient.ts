@@ -20,7 +20,7 @@ export interface Patient {
   allergies: Allergy[];
   conditions: MedicalCondition[];
   medications: Medication[];
-  vitals: Vitals;
+  vitals?: Vitals;
 
   // Insurance & Coverage
   insurance?: Insurance;
@@ -120,6 +120,7 @@ export interface LabReport {
   results: LabResult[];
   orderedBy: string;
   lab: string;
+  fileUrl?: string;
 }
 
 export interface LabResult {

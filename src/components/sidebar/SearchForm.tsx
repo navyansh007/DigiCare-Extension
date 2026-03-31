@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, User, Stethoscope } from 'lucide-react';
 import { Button, Input } from '../ui';
-import type { Patient } from '../../types/patient';
+import { searchPatients, type PatientSuggestion } from '../../services/apiService';
 
 interface SearchFormProps {
-  onSearch: (searchTerm: string | Patient, specialization: string) => void;
+  onSearch: (patientId: string, specialization: string) => void;
   isLoading: boolean;
 }
 
@@ -19,58 +19,58 @@ const specializations = [
 ];
 
 export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
-  const [phone, setPhone] = useState('');
+  const [query, setQuery] = useState('');
   const [specialization, setSpecialization] = useState('General Medicine');
   const [error, setError] = useState('');
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<PatientSuggestion[]>([]);
+  const [isFetching, setIsFetching] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Debounced search against the API on every keystroke
   useEffect(() => {
-    const handleResults = (e: CustomEvent) => {
-      if (e.detail && e.detail.results) {
-        setSuggestions(e.detail.results);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setSuggestions([]);
+    setError('');
+
+    if (!query.trim()) return;
+
+    debounceRef.current = setTimeout(async () => {
+      setIsFetching(true);
+      try {
+        const results = await searchPatients(query);
+        setSuggestions(results);
+        if (results.length === 0) setError('No patients found for that name or phone.');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Search failed.');
+      } finally {
+        setIsFetching(false);
       }
+    }, 350);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-    window.addEventListener('DIGICARE_EXT_SEARCH_RESULTS', handleResults as EventListener);
-    return () => window.removeEventListener('DIGICARE_EXT_SEARCH_RESULTS', handleResults as EventListener);
-  }, []);
+  }, [query]);
+
+  const submitSearch = (suggestion: PatientSuggestion) => {
+    setError('');
+    setSuggestions([]);
+    setQuery(suggestion.name);
+    onSearch(suggestion.patientId, specialization);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    submitSearch(phone);
-  };
-
-  const submitSearch = (searchTerm: string | Patient) => {
-    setError('');
-
-    if (typeof searchTerm === 'string') {
-      const trimmedTerm = searchTerm.trim();
-      if (!trimmedTerm) {
-        setError('Please enter a Name, Phone or ID');
-        return;
-      }
-      onSearch(trimmedTerm, specialization);
-    } else {
-      // It is a patient object
-      onSearch(searchTerm, specialization);
+    if (!query.trim()) {
+      setError('Please enter a name or phone number.');
+      return;
     }
-
-    setSuggestions([]);
-  };
-
-  const handleInputChange = (value: string) => {
-    setPhone(value);
-    setError('');
-
-    // Dispatch query to CRM
-    const event = new CustomEvent('DIGICARE_EXT_SEARCH_QUERY', {
-      detail: { query: value }
-    });
-    window.dispatchEvent(event);
-
-    // Clear suggestions if empty
-    if (!value.trim()) {
-      setSuggestions([]);
+    if (suggestions.length === 0) {
+      setError('Please select a patient from the suggestions.');
+      return;
     }
+    // Auto-select the first suggestion on Enter / button click
+    submitSearch(suggestions[0]);
   };
 
   return (
@@ -85,7 +85,7 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
         </div>
         <h2 className="text-xl font-semibold text-gray-800">Doctor Assistant</h2>
         <p className="text-sm text-gray-500 mt-1">
-          Select specialization & find patient
+          Select specialization &amp; find patient
         </p>
       </div>
 
@@ -116,9 +116,9 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
             Patient Search
           </label>
           <Input
-            placeholder="Search by Name, Phone, or ABHA ID"
-            value={phone}
-            onChange={(e) => handleInputChange(e.target.value)}
+            placeholder="Search by Name or Phone"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
             error={error}
             leftIcon={<User className="w-5 h-5" />}
             className="text-base"
@@ -133,23 +133,19 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
                 exit={{ opacity: 0, y: 5 }}
                 className="absolute z-10 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-100 max-h-60 overflow-y-auto"
               >
-                {suggestions.map((patient) => (
+                {suggestions.map((s) => (
                   <button
-                    key={patient.id}
+                    key={s.patientId}
                     type="button"
                     className="w-full text-left px-4 py-3 hover:bg-medical-50 border-b border-gray-50 last:border-0 flex items-center gap-3 transition-colors"
-                    onClick={() => {
-                      setPhone(patient.name);
-                      // Pass the FULL patient object up to bypass the "fetch by ID" logic which might fail
-                      submitSearch(patient);
-                    }}
+                    onClick={() => submitSearch(s)}
                   >
                     <div className="w-8 h-8 rounded-full bg-medical-50 flex items-center justify-center flex-shrink-0 text-medical-600">
                       <User className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-800">{patient.name}</p>
-                      <p className="text-xs text-gray-500">{patient.phone} • {patient.abhaId}</p>
+                      <p className="text-sm font-medium text-gray-800">{s.name}</p>
+                      <p className="text-xs text-gray-500">{s.phone}</p>
                     </div>
                   </button>
                 ))}
@@ -160,12 +156,12 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
 
         <Button
           type="submit"
-          isLoading={isLoading}
+          isLoading={isLoading || isFetching}
           className="w-full"
           size="lg"
           rightIcon={<ArrowRight className="w-4 h-4" />}
         >
-          {isLoading ? 'Fetching details...' : 'Load Patient Data'}
+          {isLoading ? 'Fetching details…' : 'Load Patient Data'}
         </Button>
       </form>
     </motion.div>
