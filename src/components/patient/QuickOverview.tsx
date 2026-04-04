@@ -113,28 +113,30 @@ export function QuickOverview({ patient, specialization = 'General Medicine', pa
 
         {pipelineBrief ? (
           <div className="space-y-2">
-            <p className="text-sm text-gray-700 leading-relaxed font-medium">{pipelineBrief.brief}</p>
-
             {pipelineBrief.red_flags.length > 0 && (
               <div className="mt-2 space-y-1">
                 <p className="text-xs font-semibold text-red-600 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" /> {pipelineBrief.red_flags.length} Red Flag{pipelineBrief.red_flags.length !== 1 ? 's' : ''}
                 </p>
-                {pipelineBrief.red_flags.slice(0, 3).map((flag, i) => (
+                {pipelineBrief.red_flags.map((flag, i) => (
                   <p key={i} className="text-xs text-red-600 pl-4">
                     • <span className="font-medium">{flag.test}</span>: {flag.result} {flag.unit}
                   </p>
                 ))}
-                {pipelineBrief.red_flags.length > 3 && (
-                  <p className="text-xs text-red-500 pl-4">+{pipelineBrief.red_flags.length - 3} more</p>
-                )}
               </div>
             )}
 
             {pipelineBrief.green_flags.length > 0 && (
-              <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
-                <CheckCircle className="w-3 h-3" /> {pipelineBrief.green_flags.length} parameters within normal range
-              </p>
+              <div className="mt-2 space-y-1">
+                <p className="text-xs font-semibold text-green-600 flex items-center gap-1">
+                  <CheckCircle className="w-3 h-3" /> {pipelineBrief.green_flags.length} Normal Finding{pipelineBrief.green_flags.length !== 1 ? 's' : ''}
+                </p>
+                {pipelineBrief.green_flags.map((flag, i) => (
+                  <p key={i} className="text-xs text-green-600 pl-4">
+                    • <span className="font-medium">{flag.test}</span>: {flag.result} {flag.unit}
+                  </p>
+                ))}
+              </div>
             )}
 
             <p className="text-[10px] text-gray-400 italic mt-1">{pipelineBrief.disclaimer}</p>
